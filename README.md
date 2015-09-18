@@ -8,16 +8,34 @@ configuration switch.
 $ kube-cluster create env dev --driver=vbox
 Creating environment "dev".
 Running magic... Let there be more light.
+Done.
+
+$ kube-cluster create env stage1 --driver=aws --interactive
+Creating environment "stage1".
+Give AWS Credential ID: some-aws-id
+Give AWS Credential KEY: some-aws-key
+How many nodes [5]: 6
+Autoscale [Y/n]: n
+...
+Running magic... Let there be more light.
+Done.
 
 $ kube-cluster get env
-environment     driver
-dev             vbox
-stage1          aws
-live-aws        aws
-live-gce        gce
+environment    driver    nodes
+dev            vbox      1
+stage1         aws       6
+live-aws       aws       10
+live-gce       gce       20
 
 $ kube-cluster env dev
 Current environment is "dev"
+
+$ kube-cluster describe env stage1
+Environment: stage1
+Driver: AWS
+Nodes: 6
+Autoscale: No
+...
 
 $ kube-cluster get rc,svc,po,no
  ...kubectl.sh output...
