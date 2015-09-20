@@ -69,10 +69,9 @@ $ echo export KUBE_CLUSTER_ENVIRONMENT="environment-name" >> ~/.bash_profile
 ## How to Install
 
 ```ShellSession
-# gb get github.com/gerred/kube-cluster
+# go get github.com/gerred/kube-cluster/...
 ```
 
 ## Dependencies
 
- * [GB](http://getgb.io)
- * Installed and configured `kubectl.sh` (version ???)
+ * Kubernetes locally installed (for `kubectl` and related tools).
