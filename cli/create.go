@@ -16,9 +16,9 @@ package cli
 
 import (
 	"fmt"
+	"log"
 
-	"github.com/cloudflare/cfssl/log"
-	"github.com/spf13/cobra"
+	"github.com/gerred/kube-cluster/Godeps/_workspace/src/github.com/spf13/cobra"
 )
 
 var provider string
@@ -37,7 +37,7 @@ func init() {
 func CreateCluster(cmd *cobra.Command, args []string) {
 	if len(args) < 1 {
 		cmd.Usage()
-		log.Error("name needs to be provided")
+		log.Fatal("name needs to be provided")
 	}
 
 	fmt.Println(provider)
