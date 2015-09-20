@@ -15,14 +15,22 @@
 package cli
 
 import (
+	"fmt"
+
 	"github.com/cloudflare/cfssl/log"
 	"github.com/spf13/cobra"
 )
+
+var provider string
 
 var createCmd = &cobra.Command{
 	Use:   "create [name]",
 	Short: "Create a Kubernetes cluster with the given name and provider options",
 	Run:   CreateCluster,
+}
+
+func init() {
+	createCmd.Flags().StringVarP(&provider, "provider", "p", "virtualbox", "specify which provider to use")
 }
 
 //CreateCluster creates a new Kubernetes cluster with a provider name and options.
@@ -31,4 +39,6 @@ func CreateCluster(cmd *cobra.Command, args []string) {
 		cmd.Usage()
 		log.Error("name needs to be provided")
 	}
+
+	fmt.Println(provider)
 }
