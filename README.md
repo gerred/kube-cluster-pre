@@ -75,3 +75,9 @@ $ echo export KUBE_CLUSTER_ENVIRONMENT="environment-name" >> ~/.bash_profile
 ## Dependencies
 
  * Kubernetes locally installed (for `kubectl` and related tools).
+ * GoDeps (if you plan to contribute).
+
+## Contributing
+
+ If you want to contribute, you are going to need Go installed and configured
+ in your machina. Please, refer to the [CONTRIBUTING](CONTRIBUTING.md) file.
