@@ -1,6 +1,6 @@
 # kube-cluster
 
-`kube-cluster` is a wrapper for `kubectl.sh` that provides environment
+`kube-cluster` is a wrapper for `kubectl` that provides environment
 configuration switch.
 
 ## Usage
@@ -38,7 +38,7 @@ Autoscale: No
 ...
 
 $ kube-cluster get rc,svc,po,no
- ...kubectl.sh output...
+ ...kubectl output...
 
 ```
 
