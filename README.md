@@ -44,7 +44,7 @@ $ kube-cluster get rc,svc,po,no
 
 ## Options
 
- * *create env*: creates a local environment configuration to communicate with a
+ * *create-env*: creates a local environment configuration to communicate with a
  kubernetes deployment.
 
  * *env [name]*: changes to given environment. It reconfigures the tool so all
