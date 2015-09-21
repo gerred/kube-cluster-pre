@@ -22,7 +22,6 @@
 package kubectlfwd
 
 import (
-	"io"
 	"os"
 	"os/exec"
 	"strings"
@@ -47,18 +46,21 @@ type Fwd struct {
 	kubectlBinary string   // kubectlBinary is the full path of the detected kubectl
 
 	// stdio for kubectl execution
+	stdin  *os.File
 	stdout *os.File
 	stderr *os.File
 }
 
 // New instantiates a call forwarder (*Fwd). Feed it os.Args, and os.Stdout and
 // os.Stderr.
-func New(args []string, kubectl string, stdout, stderr *os.File) *Fwd {
+func New(args []string, kubectl string, stdin, stdout, stderr *os.File) *Fwd {
 	return &Fwd{
 		args:          args,
 		kubectlBinary: kubectl,
-		stdout:        stdout,
-		stderr:        stderr,
+
+		stdin:  stdin,
+		stdout: stdout,
+		stderr: stderr,
 	}
 }
 
@@ -70,20 +72,14 @@ func (f *Fwd) Hijack() (bool, error) {
 	}
 
 	cmd := exec.Command(f.kubectlBinary, f.args[1:]...)
-	stdout, err := cmd.StdoutPipe()
-	if err != nil {
-		return true, err
-	}
-	stderr, err := cmd.StderrPipe()
-	if err != nil {
-		return true, err
-	}
+	cmd.Stdin = f.stdin
+	cmd.Stdout = f.stdout
+	cmd.Stderr = f.stderr
+
 	if err := cmd.Start(); err != nil {
 		return true, err
 	}
 
-	io.Copy(f.stderr, stderr)
-	io.Copy(f.stdout, stdout)
 	if err := cmd.Wait(); err != nil {
 		return true, err
 	}
@@ -97,7 +93,7 @@ func (f *Fwd) isClusterCall() bool {
 	args := f.noFlagsArgs()
 
 	if len(args) < 3 {
-		return true
+		return false
 	}
 
 	cmd := strings.ToLower(args[1])
@@ -114,7 +110,7 @@ func (f *Fwd) isClusterCall() bool {
 func (f *Fwd) noFlagsArgs() []string {
 	var args []string
 	for _, v := range f.args {
-		if '-' == v[0] {
+		if "-f" != v && '-' == v[0] {
 			continue
 		}
 		args = append(args, v)
