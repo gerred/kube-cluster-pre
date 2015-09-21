@@ -79,12 +79,14 @@ func (f *Fwd) ForwardCall() (bool, error) {
 }
 
 func (f *Fwd) isClusterCall() bool {
-	if len(f.args) < 3 || '-' == f.args[2][0] {
+	args := f.noFlagsArgs()
+
+	if len(args) < 3 {
 		return true
 	}
 
-	cmd := strings.ToLower(f.args[1])
-	obj := strings.ToLower(f.args[2])
+	cmd := strings.ToLower(args[1])
+	obj := strings.ToLower(args[2])
 	for _, call := range acceptableClusterCalls {
 		if cmd == call.cmd && obj == call.obj {
 			return true
@@ -92,4 +94,15 @@ func (f *Fwd) isClusterCall() bool {
 	}
 
 	return false
+}
+
+func (f *Fwd) noFlagsArgs() []string {
+	var args []string
+	for _, v := range f.args {
+		if '-' == v[0] {
+			continue
+		}
+		args = append(args, v)
+	}
+	return args
 }
