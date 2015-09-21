@@ -21,7 +21,7 @@ import (
 	"github.com/gerred/kube-cluster/Godeps/_workspace/src/github.com/spf13/cobra"
 )
 
-var provider string
+var providerName string
 
 var createEnvCmd = &cobra.Command{
 	Use:   "create-env [name]",
@@ -30,7 +30,7 @@ var createEnvCmd = &cobra.Command{
 }
 
 func init() {
-	createEnvCmd.Flags().StringVarP(&provider, "provider", "p", "virtualbox", "specify which provider to use")
+	createEnvCmd.Flags().StringVarP(&providerName, "provider", "p", "vagrant", "specify which provider to use")
 }
 
 //CreateCluster creates a new Kubernetes cluster with a provider name and options.
@@ -40,5 +40,5 @@ func CreateCluster(cmd *cobra.Command, args []string) {
 		log.Fatal("name needs to be provided")
 	}
 
-	fmt.Println(provider)
+	fmt.Println(providerName)
 }
