@@ -19,6 +19,7 @@ import (
 	"log"
 
 	"github.com/gerred/kube-cluster/Godeps/_workspace/src/github.com/spf13/cobra"
+	"github.com/gerred/kube-cluster/drivers"
 )
 
 var providerName string
@@ -40,5 +41,9 @@ func CreateCluster(cmd *cobra.Command, args []string) {
 		log.Fatal("name needs to be provided")
 	}
 
-	fmt.Println(providerName)
+	provider, err := drivers.Factory(providerName)
+	if err != nil {
+		log.Panic("error loading driver %s. %v", providerName, err)
+	}
+	fmt.Printf("%#v %#v\n", providerName, provider)
 }
