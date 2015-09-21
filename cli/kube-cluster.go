@@ -32,5 +32,5 @@ func Execute() {
 }
 
 func addCommands() {
-	KubeClusterCmd.AddCommand(createCmd)
+	KubeClusterCmd.AddCommand(createEnvCmd)
 }

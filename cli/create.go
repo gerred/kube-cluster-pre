@@ -23,14 +23,14 @@ import (
 
 var provider string
 
-var createCmd = &cobra.Command{
-	Use:   "create [name]",
+var createEnvCmd = &cobra.Command{
+	Use:   "create-env [name]",
 	Short: "Create a Kubernetes cluster with the given name and provider options",
 	Run:   CreateCluster,
 }
 
 func init() {
-	createCmd.Flags().StringVarP(&provider, "provider", "p", "virtualbox", "specify which provider to use")
+	createEnvCmd.Flags().StringVarP(&provider, "provider", "p", "virtualbox", "specify which provider to use")
 }
 
 //CreateCluster creates a new Kubernetes cluster with a provider name and options.
