@@ -17,6 +17,7 @@ package vagrant
 import (
 	"bufio"
 	"bytes"
+	"errors"
 	"fmt"
 	"os/exec"
 	"strings"
@@ -26,7 +27,7 @@ import (
 // https://github.com/kubernetes/kubernetes/blob/master/cluster/vagrant/util.sh
 
 var providers = [...]struct {
-	executable, name, pluginRe string
+	executable, name, plugin string
 }{
 	{"", "vmware_fusion", "vagrant-vmware-fusion"},
 	{"", "vmware_workstation", "vagrant-vmware-workstation"},
@@ -36,8 +37,8 @@ var providers = [...]struct {
 }
 
 type Vagrant struct {
-	bin     string
-	plugins []string
+	bin              string
+	detectedProvider string
 }
 
 func New() (*Vagrant, error) {
@@ -50,18 +51,15 @@ func New() (*Vagrant, error) {
 		bin: vagrantBin,
 	}
 
-	plugins, err := v.extractPlugins()
-	if err != nil {
+	if err := v.detectProvider(); err != nil {
 		return nil, err
 	}
-
-	v.plugins = plugins
 
 	return v, nil
 }
 
-func (v *Vagrant) extractPlugins() ([]string, error) {
-	var plugins []string
+func (v *Vagrant) extractPlugins() (map[string]struct{}, error) {
+	plugins := make(map[string]struct{})
 
 	out, err := exec.Command(v.bin, "plugin", "list").Output()
 	if err != nil {
@@ -73,10 +71,37 @@ func (v *Vagrant) extractPlugins() ([]string, error) {
 
 	for scanner.Scan() {
 		line := scanner.Text()
-		plugins = append(plugins, strings.Fields(line)[0])
+		name := strings.Fields(line)[0]
+		plugins[name] = struct{}{}
 	}
 
 	return plugins, nil
+}
+
+func (v *Vagrant) detectProvider() error {
+	plugins, err := v.extractPlugins()
+	if err != nil {
+		return fmt.Errorf("error detecting vagrant providers: %v", err)
+	}
+
+	// TODO(ccf): read $VAGRANT_DEFAULT_PROVIDER (env var)
+
+	providerFound := ""
+	for _, p := range providers {
+		_, err := exec.LookPath(p.executable)
+		_, ok := plugins[p.plugin]
+		if (p.executable != "" && err == nil) || (p.plugin != "" && ok) {
+			providerFound = p.name
+			break
+		}
+	}
+
+	if providerFound == "" {
+		return errors.New("no vagrant provider found")
+	}
+
+	v.detectedProvider = providerFound
+	return nil
 }
 
 func (v *Vagrant) GenerateCerts() {
