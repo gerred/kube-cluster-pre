@@ -33,7 +33,7 @@ func main() {
 	}
 
 	forwarder := kubectlfwd.New(os.Args, kubectl, os.Stdout, os.Stderr)
-	if fwd, err := forwarder.ForwardCall(); !fwd {
+	if fwd, err := forwarder.Hijack(); !fwd {
 		cli.Execute()
 	} else if err != nil {
 		fmt.Fprintln(os.Stderr, err)

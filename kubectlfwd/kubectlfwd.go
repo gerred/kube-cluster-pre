@@ -12,6 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package kubectlfwd analyses incoming CLI call, and detects whether it should
+// be hijacked and forwarded, as is, to kubectl. "create", "describe", "env" and
+// "get" commands, if accompanied by an environment name, they are not trapped,
+// and kube-cluster main execution course takes place.
+//
+// Whenever there is ambiguity when parsing the CLI commands and parameters, it
+// will prefer kube-cluster over kubectl.
 package kubectlfwd
 
 import (
@@ -33,15 +40,19 @@ var acceptableClusterCalls = [...]struct {
 	{"get", clusterObjectName},
 }
 
+// Fwd holds the CLI environment state which is used to make a decision about
+// forwarding the call to kubectl.
 type Fwd struct {
-	args          []string
-	kubectlBinary string
-	stdout        *os.File
-	stderr        *os.File
+	args          []string // args expects pristine os.Args
+	kubectlBinary string   // kubectlBinary is the full path of the detected kubectl
 
-	returnCode int
+	// stdio for kubectl execution
+	stdout *os.File
+	stderr *os.File
 }
 
+// New instantiates a call forwarder (*Fwd). Feed it os.Args, and os.Stdout and
+// os.Stderr.
 func New(args []string, kubectl string, stdout, stderr *os.File) *Fwd {
 	return &Fwd{
 		args:          args,
@@ -51,7 +62,9 @@ func New(args []string, kubectl string, stdout, stderr *os.File) *Fwd {
 	}
 }
 
-func (f *Fwd) ForwardCall() (bool, error) {
+// Hijack effectively forwards the CLI call to kubectl, if the combination of
+// command and objects are not targeting manipulation of Kubernetes environments.
+func (f *Fwd) Hijack() (bool, error) {
 	if f.isClusterCall() {
 		return false, nil
 	}
@@ -78,6 +91,8 @@ func (f *Fwd) ForwardCall() (bool, error) {
 	return true, nil
 }
 
+// isClusterCall iterates through command and object pairs looking for
+// non-hijackable calls.
 func (f *Fwd) isClusterCall() bool {
 	args := f.noFlagsArgs()
 
