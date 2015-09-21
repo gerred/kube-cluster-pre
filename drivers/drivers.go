@@ -17,8 +17,6 @@ package drivers
 import (
 	"errors"
 	"log"
-
-	"github.com/gerred/kube-cluster/drivers/vagrant"
 )
 
 // The Driver interface is the set of functions required to start, manage, and verify a Kubernetes cluster. Inspired by the steps used in kube-up.sh, with extensions for management and scaling of clusters.
@@ -39,7 +37,7 @@ const (
 func Factory(provider string) (Driver, error) {
 	switch provider {
 	case Vagrant:
-		return vagrant.New()
+		log.Panic("not implemented")
 	case AmazonEC2:
 		log.Panic("not implemented")
 	default:
