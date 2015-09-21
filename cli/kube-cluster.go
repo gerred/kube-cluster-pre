@@ -14,7 +14,7 @@
 
 package cli
 
-import "github.com/spf13/cobra"
+import "github.com/gerred/kube-cluster/Godeps/_workspace/src/github.com/spf13/cobra"
 
 // KubeClusterCmd is the root command. Attach all other commands to this.
 var KubeClusterCmd = &cobra.Command{
