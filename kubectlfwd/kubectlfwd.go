@@ -33,7 +33,7 @@ var acceptableClusterCalls = [...]struct {
 	{"get", clusterObjectName},
 }
 
-type fwd struct {
+type Fwd struct {
 	args          []string
 	kubectlBinary string
 	stdout        *os.File
@@ -42,8 +42,8 @@ type fwd struct {
 	returnCode int
 }
 
-func New(args []string, kubectl string, stdout, stderr *os.File) *fwd {
-	return &fwd{
+func New(args []string, kubectl string, stdout, stderr *os.File) *Fwd {
+	return &Fwd{
 		args:          args,
 		kubectlBinary: kubectl,
 		stdout:        stdout,
@@ -51,7 +51,7 @@ func New(args []string, kubectl string, stdout, stderr *os.File) *fwd {
 	}
 }
 
-func (f *fwd) ForwardCall() (bool, error) {
+func (f *Fwd) ForwardCall() (bool, error) {
 	if f.isClusterCall() {
 		return false, nil
 	}
@@ -78,7 +78,7 @@ func (f *fwd) ForwardCall() (bool, error) {
 	return true, nil
 }
 
-func (f *fwd) isClusterCall() bool {
+func (f *Fwd) isClusterCall() bool {
 	if len(f.args) < 3 || '-' == f.args[2][0] {
 		return true
 	}
