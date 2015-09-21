@@ -14,29 +14,8 @@
 
 package main
 
-import (
-	"fmt"
-	"log"
-	"os"
-	"os/exec"
-
-	"github.com/gerred/kube-cluster/cli"
-	"github.com/gerred/kube-cluster/kubectlfwd"
-)
-
-const kubectlBinaryName = "kubectl"
+import "github.com/gerred/kube-cluster/cli"
 
 func main() {
-	kubectl, err := exec.LookPath(kubectlBinaryName)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	forwarder := kubectlfwd.New(os.Args, kubectl, os.Stdout, os.Stderr)
-	if fwd, err := forwarder.Hijack(); !fwd {
-		cli.Execute()
-	} else if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
-	}
+	cli.Execute()
 }
