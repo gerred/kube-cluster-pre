@@ -44,17 +44,17 @@ func CreateCluster(cmd *cobra.Command, args []string) {
 
 	provider, err := drivers.Factory(providerName)
 	if err != nil {
-		log.Panic("error loading driver %s. %v", providerName, err)
+		log.Panicf("error loading driver %s. %v", providerName, err)
 	}
 	fmt.Println("Using", providerName)
 
 	cluster, err := kubeUp(provider)
 	if err != nil {
-		log.Fatal("could not install kubernetes in %v", providerName)
+		log.Fatalf("could not install kubernetes in %v. %v", providerName, err)
 	}
 
 	if !cluster.IsValid() {
-		log.Fatal("could not install kubernetes in %v. invalid cluster outcome.", providerName)
+		log.Fatalf("could not install kubernetes in %v. invalid cluster outcome.", providerName)
 	}
 
 	fmt.Println("cluster info")
