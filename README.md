@@ -40,6 +40,10 @@ Autoscale: No
 $ kube-cluster get rc,svc,po,no
  ...kubectl output...
 
+$ kube-cluster delete-env dev
+Deleting environment "dev".
+Running magic... Let there be more light.
+Done.
 ```
 
 ## Options

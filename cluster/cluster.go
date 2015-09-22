@@ -12,46 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package virtualbox
+package cluster
 
-import (
-	"fmt"
-	"os/exec"
-)
+import "fmt"
 
-const VBoxManageBin = "VBoxManage"
+type Cluster struct{}
 
-type Virtualbox struct {
-	bin string
+func (c *Cluster) IsValid() bool {
+	// todo(carlos): test for cluster correctness.
+
+	return true
 }
 
-func New() (*Virtualbox, error) {
-	bin, err := exec.LookPath(VBoxManageBin)
-	if err != nil {
-		return nil, fmt.Errorf("could not find %s: %v", VBoxManageBin, err)
-	}
-
-	v := &Virtualbox{
-		bin: bin,
-	}
-
-	return v, nil
-}
-
-func (v *Virtualbox) GenerateCerts() {
-}
-
-func (v *Virtualbox) GetTokens() {
-}
-
-func (v *Virtualbox) ProvisionMaster() {
-}
-
-func (v *Virtualbox) ConfigureMaster() {
-}
-
-func (v *Virtualbox) ProvisionNode() {
-}
-
-func (v *Virtualbox) ConfigureNode() {
+func (c *Cluster) Info() string {
+	return fmt.Sprintf("%#v\n", c)
 }

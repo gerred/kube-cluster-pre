@@ -19,6 +19,7 @@ import (
 	"log"
 
 	"github.com/gerred/kube-cluster/Godeps/_workspace/src/github.com/spf13/cobra"
+	"github.com/gerred/kube-cluster/cluster"
 	"github.com/gerred/kube-cluster/drivers"
 )
 
@@ -31,7 +32,7 @@ var createEnvCmd = &cobra.Command{
 }
 
 func init() {
-	createEnvCmd.Flags().StringVarP(&providerName, "provider", "p", "vagrant", "specify which provider to use")
+	createEnvCmd.Flags().StringVarP(&providerName, "provider", "p", "virtualbox", "specify which provider to use")
 }
 
 //CreateCluster creates a new Kubernetes cluster with a provider name and options.
@@ -45,5 +46,39 @@ func CreateCluster(cmd *cobra.Command, args []string) {
 	if err != nil {
 		log.Panic("error loading driver %s. %v", providerName, err)
 	}
-	fmt.Printf("%#v %#v\n", providerName, provider)
+	fmt.Println("Using", providerName)
+
+	cluster, err := kubeUp(provider)
+	if err != nil {
+		log.Fatal("could not install kubernetes in %v", providerName)
+	}
+
+	if !cluster.IsValid() {
+		log.Fatal("could not install kubernetes in %v. invalid cluster outcome.", providerName)
+	}
+
+	fmt.Println("cluster info")
+	fmt.Println("\t", cluster.Info())
+}
+
+func kubeUp(provider drivers.Driver) (*cluster.Cluster, error) {
+	c := new(cluster.Cluster)
+	fmt.Println("kube up - start")
+	defer fmt.Println("kube up - done")
+
+	fmt.Println("\tgen kube basicauth")
+	fmt.Println("\tget tokens")
+
+	// c.Master := provider.ProvisionMaster()
+	provider.ProvisionMaster()
+	// c.Nodes := provider.ProvisionNode()
+	provider.ProvisionNode()
+
+	fmt.Println("\tscp kubernetes")
+	fmt.Println("\tscp certificates")
+	fmt.Println("\tcreate kubeconfig")
+
+	fmt.Println("\tverify cluster")
+
+	return c, nil
 }
