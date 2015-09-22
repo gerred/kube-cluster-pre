@@ -42,7 +42,7 @@ func CreateCluster(cmd *cobra.Command, args []string) {
 		log.Fatal("name needs to be provided")
 	}
 
-	provider, err := drivers.Factory(providerName)
+	provider, err := drivers.Factory(providerName, args[0])
 	if err != nil {
 		log.Panicf("error loading driver %s. %v", providerName, err)
 	}
@@ -65,6 +65,12 @@ func kubeUp(provider drivers.Driver) (*cluster.Cluster, error) {
 	c := new(cluster.Cluster)
 	fmt.Println("kube up - start")
 	defer fmt.Println("kube up - done")
+
+	fmt.Print("\tsetting up provider... ")
+	if err := provider.Setup(); err != nil {
+		return nil, err
+	}
+	fmt.Println("done")
 
 	fmt.Println("\tgen kube basicauth")
 	fmt.Println("\tget tokens")

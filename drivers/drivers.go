@@ -22,7 +22,11 @@ import (
 )
 
 // The Driver interface is the set of functions required to start, manage, and verify a Kubernetes cluster. Inspired by the steps used in kube-up.sh, with extensions for management and scaling of clusters.
+//
+// Setup() prepares the local machine to communicate with the remote deployment provider, ranging from downloading images up to setting the environment.
 type Driver interface {
+	Setup() error
+
 	GenerateCerts()
 	GetTokens()
 	ProvisionMaster()
@@ -36,10 +40,10 @@ const (
 	AmazonEC2  = "amazonec2"
 )
 
-func Factory(provider string) (Driver, error) {
+func Factory(provider, envName string) (Driver, error) {
 	switch provider {
 	case Virtualbox:
-		return virtualbox.New()
+		return virtualbox.New(envName)
 	case AmazonEC2:
 		log.Panic("not implemented")
 	default:
