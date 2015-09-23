@@ -27,7 +27,6 @@ import (
 	"runtime"
 )
 
-// todo(carlos): detect CPU architecture and download appropriate ISO
 // todo(carlos): detect OS and adjust VBoxManageBin properly (.exe)
 // todo(carlos): test for minimum VBox version
 
