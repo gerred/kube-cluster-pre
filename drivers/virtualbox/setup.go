@@ -16,6 +16,7 @@ package virtualbox
 
 import (
 	"archive/tar"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -33,9 +34,14 @@ const (
 	VagrantBox = "https://cloud-images.ubuntu.com/vagrant/vivid/current/vivid-server-cloudimg-amd64-vagrant-disk1.box"
 )
 
+var ErrDeployedEnvironment error = errors.New("environment already deployed.")
+
 func (v *Virtualbox) Setup() error {
 	// todo(carlos): detect CPU architecture and adjust ostype accordingly
 
+	if v.isDeployedEnv() {
+		return ErrDeployedEnvironment
+	}
 	defer v.cleanUp()
 
 	steps := []func() error{
@@ -53,6 +59,14 @@ func (v *Virtualbox) Setup() error {
 	}
 
 	return nil
+}
+
+func (v *Virtualbox) isDeployedEnv() bool {
+	if _, err := exec.Command(v.mgmtbin, "showvminfo", v.envName, "--machinereadable").Output(); err != nil {
+		return false
+	}
+
+	return true
 }
 
 func (v *Virtualbox) downloadISO() error {
