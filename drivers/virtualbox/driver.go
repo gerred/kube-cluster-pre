@@ -15,9 +15,11 @@
 package virtualbox
 
 import (
+	"errors"
 	"fmt"
 	"os/exec"
 	"runtime"
+	"strconv"
 )
 
 const (
@@ -31,18 +33,19 @@ type Virtualbox struct {
 	envName     string
 }
 
-// todo(carlos): test for minimum VBox version
+var ErrParsingVirtualBoxVersion error = errors.New("error trying to detect VirtualBox version.")
+var ErrMinVirtualBoxVersion error = errors.New("upgrade Virtualbox to at least v5.")
 
 func New(envName string) (*Virtualbox, error) {
 	dotExe := ""
 	if runtime.GOOS == "windows" {
 		dotExe = ".exe"
 	}
-	mgmtbin, err := exec.LookPath(VBoxManageBin+dotExe)
+	mgmtbin, err := exec.LookPath(VBoxManageBin + dotExe)
 	if err != nil {
 		return nil, fmt.Errorf("could not find %s: %v", VBoxManageBin, err)
 	}
-	headlessbin, err := exec.LookPath(VBoxHeadlessBin+dotExe)
+	headlessbin, err := exec.LookPath(VBoxHeadlessBin + dotExe)
 	if err != nil {
 		return nil, fmt.Errorf("could not find %s: %v", VBoxHeadlessBin, err)
 	}
@@ -53,7 +56,26 @@ func New(envName string) (*Virtualbox, error) {
 		envName:     envName,
 	}
 
+	if err := v.isMinimumVirtualBoxVersion(); err != nil {
+		return nil, err
+	}
+
 	return v, nil
+}
+
+func (v *Virtualbox) isMinimumVirtualBoxVersion() error {
+	versionOut, err := exec.Command(v.mgmtbin, "--version").Output()
+	if err != nil {
+		return err
+	}
+	version, err := strconv.Atoi(string(versionOut[0]))
+	if err != nil {
+		return ErrParsingVirtualBoxVersion
+	}
+	if version < 5 {
+		return ErrMinVirtualBoxVersion
+	}
+	return nil
 }
 
 func (v *Virtualbox) GenerateCerts() {
