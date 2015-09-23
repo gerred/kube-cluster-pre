@@ -24,6 +24,7 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"runtime"
 )
 
 // todo(carlos): detect CPU architecture and download appropriate ISO
@@ -31,14 +32,13 @@ import (
 // todo(carlos): test for minimum VBox version
 
 const (
-	VagrantBox = "https://cloud-images.ubuntu.com/vagrant/vivid/current/vivid-server-cloudimg-amd64-vagrant-disk1.box"
+	VagrantBox = "https://cloud-images.ubuntu.com/vagrant/vivid/current/vivid-server-cloudimg-%s-vagrant-disk1.box"
 )
 
 var ErrDeployedEnvironment error = errors.New("environment already deployed.")
+var ErrNonSupportedArchitecture error = errors.New("non supported architecture. must be either i386 or amd64.")
 
 func (v *Virtualbox) Setup() error {
-	// todo(carlos): detect CPU architecture and adjust ostype accordingly
-
 	if v.isDeployedEnv() {
 		return ErrDeployedEnvironment
 	}
@@ -69,15 +69,29 @@ func (v *Virtualbox) isDeployedEnv() bool {
 	return true
 }
 
+func (v *Virtualbox) boxURL() (string, error) {
+	switch runtime.GOARCH {
+	case "386":
+		return fmt.Sprintf(VagrantBox, "i386"), nil
+	case "amd64":
+		return fmt.Sprintf(VagrantBox, "amd64"), nil
+	}
+	return "", ErrNonSupportedArchitecture
+}
+
 func (v *Virtualbox) downloadISO() error {
-	// todo(carlos): if the ISO is available local, and it is consistent, then avoid the second download.
-	output, err := os.Create(path.Base(VagrantBox))
+	url, err := v.boxURL()
+	if err != nil {
+		return err
+	}
+
+	output, err := os.Create(path.Base(url))
 	if err != nil {
 		return err
 	}
 	defer output.Close()
 
-	response, err := http.Get(VagrantBox)
+	response, err := http.Get(url)
 	if err != nil {
 		return err
 	}
@@ -91,7 +105,12 @@ func (v *Virtualbox) downloadISO() error {
 }
 
 func (v *Virtualbox) untarBox() error {
-	boxFileReader, err := os.Open(path.Base(VagrantBox))
+	url, err := v.boxURL()
+	if err != nil {
+		return err
+	}
+
+	boxFileReader, err := os.Open(path.Base(url))
 	if err != nil {
 		return err
 	}
