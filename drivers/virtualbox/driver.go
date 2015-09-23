@@ -17,6 +17,7 @@ package virtualbox
 import (
 	"fmt"
 	"os/exec"
+	"runtime"
 )
 
 const (
@@ -30,12 +31,18 @@ type Virtualbox struct {
 	envName     string
 }
 
+// todo(carlos): test for minimum VBox version
+
 func New(envName string) (*Virtualbox, error) {
-	mgmtbin, err := exec.LookPath(VBoxManageBin)
+	dotExe := ""
+	if runtime.GOOS == "windows" {
+		dotExe = ".exe"
+	}
+	mgmtbin, err := exec.LookPath(VBoxManageBin+dotExe)
 	if err != nil {
 		return nil, fmt.Errorf("could not find %s: %v", VBoxManageBin, err)
 	}
-	headlessbin, err := exec.LookPath(VBoxHeadlessBin)
+	headlessbin, err := exec.LookPath(VBoxHeadlessBin+dotExe)
 	if err != nil {
 		return nil, fmt.Errorf("could not find %s: %v", VBoxHeadlessBin, err)
 	}

@@ -27,9 +27,6 @@ import (
 	"runtime"
 )
 
-// todo(carlos): detect OS and adjust VBoxManageBin properly (.exe)
-// todo(carlos): test for minimum VBox version
-
 const (
 	VagrantBox = "https://cloud-images.ubuntu.com/vagrant/vivid/current/vivid-server-cloudimg-%s-vagrant-disk1.box"
 )
