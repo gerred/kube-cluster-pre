@@ -36,6 +36,8 @@ const (
 func (v *Virtualbox) Setup() error {
 	// todo(carlos): detect CPU architecture and adjust ostype accordingly
 
+	defer v.cleanUp()
+
 	steps := []func() error{
 		v.downloadISO,
 		v.untarBox,
@@ -130,4 +132,19 @@ func (v *Virtualbox) startVM() error {
 		return err
 	}
 	return nil
+}
+
+func (v *Virtualbox) cleanUp() {
+	files := [...]string{
+		"Vagrantfile",
+		"box-disk1.vmdk",
+		"box.ovf",
+		"vivid-server-cloudimg-amd64-vagrant-disk1.box",
+	}
+
+	for _, fn := range files {
+		if err := os.Remove(fn); err != nil {
+			log.Println(err)
+		}
+	}
 }
