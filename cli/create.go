@@ -72,8 +72,8 @@ func kubeUp(provider drivers.Driver) (*cluster.Cluster, error) {
 	}
 	fmt.Println("done")
 
-	fmt.Println("\tgen kube basicauth")
-	fmt.Println("\tget tokens")
+	c.GenerateBasicAuth()
+	c.GenerateTokens()
 
 	// c.Master := provider.ProvisionMaster()
 	provider.ProvisionMaster()

@@ -14,9 +14,82 @@
 
 package cluster
 
-import "fmt"
+import (
+	cryptoRand "crypto/rand"
+	"encoding/base64"
+	"fmt"
+	"math/rand"
+	"strings"
+	"time"
+)
 
-type Cluster struct{}
+type Cluster struct {
+	User     string
+	Password string
+
+	KubeletToken string
+	ProxyToken   string
+}
+
+func (c *Cluster) GenerateBasicAuth() {
+	c.User = "admin"
+	c.Password = generatePassword(16)
+}
+
+func generatePassword(n int) string {
+	const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+	const letterIdxBits = 6
+	const letterIdxMask = 1<<letterIdxBits - 1
+	const letterIdxMax = 63 / letterIdxBits
+
+	src := rand.NewSource(time.Now().UnixNano())
+	b := make([]byte, n)
+
+	for i, cache, remain := n-1, src.Int63(), letterIdxMax; i >= 0; {
+		if remain == 0 {
+			cache, remain = src.Int63(), letterIdxMax
+		}
+		if idx := int(cache & letterIdxMask); idx < len(letterBytes) {
+			b[i] = letterBytes[idx]
+			i--
+		}
+		cache >>= letterIdxBits
+		remain--
+	}
+
+	return string(b)
+}
+
+func (c *Cluster) GenerateTokens() error {
+	kubeletToken, err := c.readRandomToken()
+	if err != nil {
+		return err
+	}
+
+	proxyToken, err := c.readRandomToken()
+	if err != nil {
+		return err
+	}
+
+	c.KubeletToken = kubeletToken
+	c.ProxyToken = proxyToken
+
+	return nil
+}
+
+func (c *Cluster) readRandomToken() (string, error) {
+	b := make([]byte, 128)
+
+	if _, err := cryptoRand.Read(b); err != nil {
+		return "", err
+	}
+	token := base64.StdEncoding.EncodeToString(b)
+	filters := [...]string{"=", "+", "/"}
+	for _, fchr := range filters {
+		token = strings.Replace(token, fchr, "", -1)
+	}
+	return token[0:32], nil
+}
 
 func (c *Cluster) IsValid() bool {
 	// todo(carlos): test for cluster correctness.
