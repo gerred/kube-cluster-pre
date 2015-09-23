@@ -64,6 +64,7 @@ func New(envName string) (*Virtualbox, error) {
 }
 
 func (v *Virtualbox) isMinimumVirtualBoxVersion() error {
+	// TODO(carlos): consider https://github.com/mcuadros/go-version
 	versionOut, err := exec.Command(v.mgmtbin, "--version").Output()
 	if err != nil {
 		return err
