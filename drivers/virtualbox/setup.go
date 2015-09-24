@@ -24,7 +24,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"os/exec"
 	"path"
 )
 
@@ -62,7 +61,7 @@ func (v *Virtualbox) Setup() error {
 }
 
 func (v *Virtualbox) isDeployedEnv() bool {
-	if _, err := exec.Command(v.mgmtbin, "showvminfo", v.envName, "--machinereadable").Output(); err != nil {
+	if _, err := execCommand(v.mgmtbin, "showvminfo", v.envName, "--machinereadable").Output(); err != nil {
 		return false
 	}
 
@@ -203,7 +202,7 @@ func (v *Virtualbox) importVM() error {
 	}
 
 	for _, step := range steps {
-		out, err := exec.Command(v.mgmtbin, step...).CombinedOutput()
+		out, err := execCommand(v.mgmtbin, step...).CombinedOutput()
 		if err != nil {
 			log.Printf("%s\n", out)
 			return err
@@ -214,7 +213,7 @@ func (v *Virtualbox) importVM() error {
 }
 
 func (v *Virtualbox) startVM() error {
-	if err := exec.Command(v.headlessbin, "-s", v.envName).Start(); err != nil {
+	if err := execCommand(v.headlessbin, "-s", v.envName).Start(); err != nil {
 		return err
 	}
 	return nil

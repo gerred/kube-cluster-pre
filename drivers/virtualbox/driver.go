@@ -36,6 +36,8 @@ type Virtualbox struct {
 var ErrParsingVirtualBoxVersion error = errors.New("error trying to detect VirtualBox version")
 var ErrMinVirtualBoxVersion error = errors.New("upgrade Virtualbox to at least v5")
 
+var execCommand = exec.Command
+
 func New(envName string) (*Virtualbox, error) {
 	dotExe := ""
 	if runtime.GOOS == "windows" {
@@ -65,7 +67,7 @@ func New(envName string) (*Virtualbox, error) {
 
 func (v *Virtualbox) isMinimumVirtualBoxVersion() error {
 	// TODO(carlos): consider https://github.com/mcuadros/go-version
-	versionOut, err := exec.Command(v.mgmtbin, "--version").Output()
+	versionOut, err := execCommand(v.mgmtbin, "--version").Output()
 	if err != nil {
 		return err
 	}
