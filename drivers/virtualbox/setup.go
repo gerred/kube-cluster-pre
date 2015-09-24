@@ -165,6 +165,11 @@ func (v *Virtualbox) importVM() error {
 	steps := [...][]string{
 		{"import", "box.ovf", "--vsys", "0", "--vmname", v.envName},
 		{"modifyvm", v.envName, "--natpf1", "guestssh,tcp,,2222,,22"},
+
+		// From k8s Vagrantfile
+		// Use faster paravirtualized networking
+		{"modifyvm", v.envName, "--nictype1", "virtio"},
+		{"modifyvm", v.envName, "--nictype2", "virtio"},
 	}
 
 	for _, step := range steps {
