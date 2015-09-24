@@ -75,8 +75,12 @@ func (v *Virtualbox) isISOdownloaded() bool {
 		if rerr != nil {
 			return false
 		}
-		io.Copy(h, r)
-		r.Close()
+		if _, err := io.Copy(h, r); err != nil {
+			return false
+		}
+		if err := r.Close(); err != nil {
+			return false
+		}
 
 		isoSHA1 := h.Sum(nil)
 		if fmt.Sprintf("%x", isoSHA1) == VagrantBoxSHA1 {
@@ -98,13 +102,21 @@ func (v *Virtualbox) downloadISO() error {
 	if err != nil {
 		return err
 	}
-	defer output.Close()
+	defer func(c io.Closer) {
+		if err := c.Close(); err != nil {
+			log.Panic(err)
+		}
+	}(output)
 
 	response, err := http.Get(VagrantBox)
 	if err != nil {
 		return err
 	}
-	defer response.Body.Close()
+	defer func(c io.Closer) {
+		if err := c.Close(); err != nil {
+			log.Panic(err)
+		}
+	}(response.Body)
 
 	if _, err := io.Copy(output, response.Body); err != nil {
 		return err
@@ -113,20 +125,54 @@ func (v *Virtualbox) downloadISO() error {
 	return nil
 }
 
-func (v *Virtualbox) untarBox() error {
+func (v *Virtualbox) openBoxTarFile() (*tar.Reader, error) {
 	boxFileReader, err := os.Open(path.Base(VagrantBox))
 	if err != nil {
-		return err
+		return nil, err
 	}
-	defer boxFileReader.Close()
 
 	gzReader, err := gzip.NewReader(boxFileReader)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	defer gzReader.Close()
 
 	tarReader := tar.NewReader(gzReader)
+	return tarReader, nil
+}
+
+func untarFile(hdr *tar.Header, tarReader *tar.Reader) error {
+	fn := hdr.Name
+	switch hdr.Typeflag {
+	case tar.TypeDir:
+		if err := os.MkdirAll(fn, os.FileMode(hdr.Mode)); err != nil {
+			return err
+		}
+
+	case tar.TypeReg:
+		writer, err := os.Create(fn)
+		if err != nil {
+			return err
+		}
+		if _, err = io.Copy(writer, tarReader); err != nil {
+			return err
+		}
+		if err = os.Chmod(fn, os.FileMode(hdr.Mode)); err != nil {
+			return err
+		}
+		if err = writer.Close(); err != nil {
+			return err
+		}
+
+	default:
+		log.Panicf("unable to untar type: %c in file %s", hdr.Typeflag, fn)
+	}
+	return nil
+}
+func (v *Virtualbox) untarBox() error {
+	tarReader, err := v.openBoxTarFile()
+	if err != nil {
+		return err
+	}
 	for {
 		hdr, err := tarReader.Next()
 		if err == io.EOF {
@@ -135,26 +181,8 @@ func (v *Virtualbox) untarBox() error {
 			return err
 		}
 
-		fn := hdr.Name
-		switch hdr.Typeflag {
-		case tar.TypeDir:
-			if err := os.MkdirAll(fn, os.FileMode(hdr.Mode)); err != nil {
-				return err
-			}
-
-		case tar.TypeReg:
-			writer, err := os.Create(fn)
-			if err != nil {
-				return err
-			}
-			io.Copy(writer, tarReader)
-			if err = os.Chmod(fn, os.FileMode(hdr.Mode)); err != nil {
-				return err
-			}
-			writer.Close()
-
-		default:
-			log.Panicf("unable to untar type: %c in file %s", hdr.Typeflag, fn)
+		if err = untarFile(hdr, tarReader); err != nil {
+			return err
 		}
 	}
 
