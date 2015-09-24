@@ -35,7 +35,7 @@ func init() {
 	createEnvCmd.Flags().StringVarP(&providerName, "provider", "p", "virtualbox", "specify which provider to use")
 }
 
-//CreateCluster creates a new Kubernetes cluster with a provider name and options.
+// CreateCluster creates a new Kubernetes cluster with a provider name and options.
 func CreateCluster(cmd *cobra.Command, args []string) {
 	if len(args) < 1 {
 		cmd.Usage()
