@@ -16,6 +16,8 @@ package virtualbox
 
 import (
 	"archive/tar"
+	"compress/gzip"
+	"crypto/sha1"
 	"errors"
 	"fmt"
 	"io"
@@ -24,11 +26,11 @@ import (
 	"os"
 	"os/exec"
 	"path"
-	"runtime"
 )
 
 const (
-	VagrantBox = "https://cloud-images.ubuntu.com/vagrant/vivid/current/vivid-server-cloudimg-%s-vagrant-disk1.box"
+	VagrantBox     = "http://opscode-vm-bento.s3.amazonaws.com/vagrant/virtualbox/opscode_fedora-21_chef-provisionerless.box"
+	VagrantBoxSHA1 = "f520b4ca37ce1721fb60ff20636eeaf12bc633ca"
 )
 
 var ErrDeployedEnvironment error = errors.New("environment already deployed.")
@@ -65,29 +67,40 @@ func (v *Virtualbox) isDeployedEnv() bool {
 	return true
 }
 
-func (v *Virtualbox) boxURL() (string, error) {
-	switch runtime.GOARCH {
-	case "386":
-		return fmt.Sprintf(VagrantBox, "i386"), nil
-	case "amd64":
-		return fmt.Sprintf(VagrantBox, "amd64"), nil
+func (v *Virtualbox) isISOdownloaded() bool {
+	fn := path.Base(VagrantBox)
+	if _, err := os.Stat(fn); err == nil {
+		h := sha1.New()
+		r, rerr := os.Open(fn)
+		if rerr != nil {
+			return false
+		}
+		io.Copy(h, r)
+		r.Close()
+
+		isoSHA1 := h.Sum(nil)
+		if fmt.Sprintf("%x", isoSHA1) == VagrantBoxSHA1 {
+			return true
+		}
+
+		v.cleanUp()
 	}
-	return "", ErrNonSupportedArchitecture
+	return false
 }
 
 func (v *Virtualbox) downloadISO() error {
-	url, err := v.boxURL()
-	if err != nil {
-		return err
+	if v.isISOdownloaded() {
+		return nil
 	}
 
-	output, err := os.Create(path.Base(url))
+	fn := path.Base(VagrantBox)
+	output, err := os.Create(fn)
 	if err != nil {
 		return err
 	}
 	defer output.Close()
 
-	response, err := http.Get(url)
+	response, err := http.Get(VagrantBox)
 	if err != nil {
 		return err
 	}
@@ -101,18 +114,19 @@ func (v *Virtualbox) downloadISO() error {
 }
 
 func (v *Virtualbox) untarBox() error {
-	url, err := v.boxURL()
-	if err != nil {
-		return err
-	}
-
-	boxFileReader, err := os.Open(path.Base(url))
+	boxFileReader, err := os.Open(path.Base(VagrantBox))
 	if err != nil {
 		return err
 	}
 	defer boxFileReader.Close()
 
-	tarReader := tar.NewReader(boxFileReader)
+	gzReader, err := gzip.NewReader(boxFileReader)
+	if err != nil {
+		return err
+	}
+	defer gzReader.Close()
+
+	tarReader := tar.NewReader(gzReader)
 	for {
 		hdr, err := tarReader.Next()
 		if err == io.EOF {
@@ -148,11 +162,19 @@ func (v *Virtualbox) untarBox() error {
 }
 
 func (v *Virtualbox) importVM() error {
-	out, err := exec.Command(v.mgmtbin, "import", "box.ovf", "--vsys", "0", "--vmname", v.envName).CombinedOutput()
-	if err != nil {
-		log.Printf("%s\n", out)
-		return err
+	steps := [...][]string{
+		{"import", "box.ovf", "--vsys", "0", "--vmname", v.envName},
+		{"modifyvm", v.envName, "--natpf1", "guestssh,tcp,,2222,,22"},
 	}
+
+	for _, step := range steps {
+		out, err := exec.Command(v.mgmtbin, step...).CombinedOutput()
+		if err != nil {
+			log.Printf("%s\n", out)
+			return err
+		}
+	}
+
 	return nil
 }
 
@@ -166,9 +188,10 @@ func (v *Virtualbox) startVM() error {
 func (v *Virtualbox) cleanUp() {
 	files := [...]string{
 		"Vagrantfile",
-		"box-disk1.vmdk",
+		"fedora-21-x86_64-disk1.vmdk",
 		"box.ovf",
-		"vivid-server-cloudimg-amd64-vagrant-disk1.box",
+		"opscode_fedora-21_chef-provisionerless.box",
+		"metadata.json",
 	}
 
 	for _, fn := range files {
