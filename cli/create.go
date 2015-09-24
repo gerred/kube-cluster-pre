@@ -75,6 +75,11 @@ func kubeUp(provider drivers.Driver) (*cluster.Cluster, error) {
 	c.GenerateBasicAuth()
 	c.GenerateTokens()
 
+	if err := c.DownloadProvisionAssets(); err != nil {
+		return nil, err
+	}
+	defer c.CleanUpProvisionAssets()
+
 	// c.Master := provider.ProvisionMaster()
 	provider.ProvisionMaster()
 	// c.Nodes := provider.ProvisionNode()

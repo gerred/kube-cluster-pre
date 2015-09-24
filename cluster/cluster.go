@@ -15,13 +15,30 @@
 package cluster
 
 import (
+	"archive/tar"
+	"compress/gzip"
 	cryptoRand "crypto/rand"
 	"encoding/base64"
 	"fmt"
+	"io"
+	"io/ioutil"
 	"math/rand"
+	"net/http"
+	"os"
+	"path"
 	"strings"
 	"time"
 )
+
+const (
+	KubernetesReleaseURL = "https://storage.googleapis.com/kubernetes-release/release/stable.txt"
+	KubernetesURL        = "https://storage.googleapis.com/kubernetes-release/release/%v/kubernetes.tar.gz"
+)
+
+var k8sAssets = map[string]struct{}{
+	"kubernetes-server-linux-amd64.tar.gz": struct{}{},
+	"kubernetes-salt.tar.gz":               struct{}{},
+}
 
 type Cluster struct {
 	User     string
@@ -89,6 +106,66 @@ func (c *Cluster) readRandomToken() (string, error) {
 		token = strings.Replace(token, fchr, "", -1)
 	}
 	return token[0:32], nil
+}
+
+func (c *Cluster) DownloadProvisionAssets() error {
+	respRelease, err := http.Get("https://storage.googleapis.com/kubernetes-release/release/stable.txt")
+	if err != nil {
+		return err
+	}
+	defer respRelease.Body.Close()
+	b, err := ioutil.ReadAll(respRelease.Body)
+	if err != nil {
+		return err
+	}
+	release := strings.TrimSpace(string(b))
+
+	respTarball, err := http.Get(fmt.Sprintf(KubernetesURL, release))
+	if err != nil {
+		return err
+	}
+	defer respTarball.Body.Close()
+
+	gzReader, err := gzip.NewReader(respTarball.Body)
+	if err != nil {
+		return err
+	}
+	defer gzReader.Close()
+
+	tarReader := tar.NewReader(gzReader)
+	for {
+		hdr, err := tarReader.Next()
+		if err == io.EOF {
+			break
+		} else if err != nil {
+			return err
+		}
+
+		baseFn := path.Base(hdr.Name)
+		if _, ok := k8sAssets[baseFn]; !ok {
+			continue
+		}
+
+		writer, err := os.Create(baseFn)
+		if err != nil {
+			return err
+		}
+		io.Copy(writer, tarReader)
+		writer.Close()
+
+		if err := os.Chmod(baseFn, os.FileMode(hdr.Mode)); err != nil {
+			return err
+		}
+
+	}
+
+	return nil
+}
+
+func (c *Cluster) CleanUpProvisionAssets() {
+	for fn, _ := range k8sAssets {
+		os.Remove(fn)
+	}
 }
 
 func (c *Cluster) IsValid() bool {
