@@ -19,6 +19,7 @@ import (
 	"log"
 
 	"github.com/gerred/kube-cluster/Godeps/_workspace/src/github.com/spf13/cobra"
+	"github.com/gerred/kube-cluster/Godeps/_workspace/src/github.com/spf13/viper"
 	"github.com/gerred/kube-cluster/cluster"
 	"github.com/gerred/kube-cluster/drivers"
 )
@@ -33,6 +34,7 @@ var createEnvCmd = &cobra.Command{
 
 func init() {
 	createEnvCmd.Flags().StringVarP(&providerName, "provider", "p", "virtualbox", "specify which provider to use")
+	cluster.GetOptions(createEnvCmd)
 }
 
 // CreateCluster creates a new Kubernetes cluster with a provider name and options.
@@ -62,15 +64,20 @@ func CreateCluster(cmd *cobra.Command, args []string) {
 }
 
 func kubeUp(provider drivers.Driver) (*cluster.Cluster, error) {
-	c := new(cluster.Cluster)
+	var options []cluster.Option
+	for _, f := range cluster.Flags {
+		v := viper.GetString(f.Name)
+		options = append(options, f.Action(v))
+	}
+
+	c := cluster.New(options...)
+
 	fmt.Println("kube up - start")
 	defer fmt.Println("kube up - done")
 
-	fmt.Print("\tsetting up provider... ")
 	if err := provider.Setup(); err != nil {
 		return nil, err
 	}
-	fmt.Println("done")
 
 	c.GenerateBasicAuth()
 	if err := c.GenerateTokens(); err != nil {

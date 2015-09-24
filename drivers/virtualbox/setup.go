@@ -37,6 +37,8 @@ var ErrDeployedEnvironment error = errors.New("environment already deployed.")
 var ErrNonSupportedArchitecture error = errors.New("non supported architecture. must be either i386 or amd64.")
 
 func (v *Virtualbox) Setup() error {
+	log.Println("launching VM")
+	defer log.Println("done")
 	if v.isDeployedEnv() {
 		return ErrDeployedEnvironment
 	}

@@ -42,16 +42,30 @@ var k8sAssets = map[string]struct{}{
 }
 
 type Cluster struct {
-	User     string
-	Password string
+	username string
+	password string
 
 	KubeletToken string
 	ProxyToken   string
 }
 
+func New(options ...Option) *Cluster {
+	c := new(Cluster)
+
+	for _, opt := range options {
+		opt(c)
+	}
+
+	return c
+}
+
 func (c *Cluster) GenerateBasicAuth() {
-	c.User = "admin"
-	c.Password = generatePassword(16)
+	if c.username == "" {
+		c.username = "admin"
+	}
+	if c.password == "" {
+		c.password = generatePassword(16)
+	}
 }
 
 func generatePassword(n int) string {
