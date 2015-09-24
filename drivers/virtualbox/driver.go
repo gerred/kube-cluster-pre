@@ -33,8 +33,8 @@ type Virtualbox struct {
 	envName     string
 }
 
-var ErrParsingVirtualBoxVersion error = errors.New("error trying to detect VirtualBox version.")
-var ErrMinVirtualBoxVersion error = errors.New("upgrade Virtualbox to at least v5.")
+var ErrParsingVirtualBoxVersion error = errors.New("error trying to detect VirtualBox version")
+var ErrMinVirtualBoxVersion error = errors.New("upgrade Virtualbox to at least v5")
 
 func New(envName string) (*Virtualbox, error) {
 	dotExe := ""
