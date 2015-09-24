@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"log"
 	"math/rand"
 	"net/http"
 	"os"
@@ -108,31 +109,41 @@ func (c *Cluster) readRandomToken() (string, error) {
 	return token[0:32], nil
 }
 
-func (c *Cluster) DownloadProvisionAssets() error {
-	respRelease, err := http.Get("https://storage.googleapis.com/kubernetes-release/release/stable.txt")
+func readProvisionAsset() (*tar.Reader, error) {
+	respRelease, err := http.Get(KubernetesReleaseURL)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	defer respRelease.Body.Close()
+	defer func(c io.Closer) {
+		if err := c.Close(); err != nil {
+			log.Panic(err)
+		}
+	}(respRelease.Body)
+
 	b, err := ioutil.ReadAll(respRelease.Body)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	release := strings.TrimSpace(string(b))
 
 	respTarball, err := http.Get(fmt.Sprintf(KubernetesURL, release))
 	if err != nil {
-		return err
+		return nil, err
 	}
-	defer respTarball.Body.Close()
 
 	gzReader, err := gzip.NewReader(respTarball.Body)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	defer gzReader.Close()
 
 	tarReader := tar.NewReader(gzReader)
+	return tarReader, nil
+}
+func (c *Cluster) DownloadProvisionAssets() error {
+	tarReader, err := readProvisionAsset()
+	if err != nil {
+		return err
+	}
 	for {
 		hdr, err := tarReader.Next()
 		if err == io.EOF {
@@ -150,8 +161,12 @@ func (c *Cluster) DownloadProvisionAssets() error {
 		if err != nil {
 			return err
 		}
-		io.Copy(writer, tarReader)
-		writer.Close()
+		if _, err := io.Copy(writer, tarReader); err != nil {
+			return err
+		}
+		if err := writer.Close(); err != nil {
+			return err
+		}
 
 		if err := os.Chmod(baseFn, os.FileMode(hdr.Mode)); err != nil {
 			return err
@@ -164,7 +179,9 @@ func (c *Cluster) DownloadProvisionAssets() error {
 
 func (c *Cluster) CleanUpProvisionAssets() {
 	for fn, _ := range k8sAssets {
-		os.Remove(fn)
+		if err := os.Remove(fn); err != nil {
+			log.Println(err)
+		}
 	}
 }
 
