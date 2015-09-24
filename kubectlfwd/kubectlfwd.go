@@ -90,6 +90,9 @@ func (f *Fwd) Hijack() (bool, error) {
 // isClusterCall iterates through command and object pairs looking for
 // non-hijackable calls.
 func (f *Fwd) isClusterCall() bool {
+	if len(f.args) == 1 || len(f.args) == 2 && '-' == f.args[1][0] {
+		return true
+	}
 	if len(f.args) < 3 {
 		return false
 	}
