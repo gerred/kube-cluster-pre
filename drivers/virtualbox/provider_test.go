@@ -52,7 +52,7 @@ func TestIsMinimumVirtualBoxVersion(t *testing.T) {
 
 func TestIsISOdownloaded(t *testing.T) {
 	const fn = "foo"
-	v, err := New("testEnv", VagrantBox(fn))
+	v, err := New("testEnv", "kuberoot", VagrantBox(fn))
 
 	if err != nil {
 		t.Errorf("unexpected error: %v", err)
