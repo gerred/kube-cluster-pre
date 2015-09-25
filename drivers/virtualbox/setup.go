@@ -28,9 +28,17 @@ import (
 )
 
 const (
-	VagrantBox     = "http://opscode-vm-bento.s3.amazonaws.com/vagrant/virtualbox/opscode_fedora-21_chef-provisionerless.box"
-	VagrantBoxSHA1 = "f520b4ca37ce1721fb60ff20636eeaf12bc633ca"
+	DefaultVagrantBox     = "http://opscode-vm-bento.s3.amazonaws.com/vagrant/virtualbox/opscode_fedora-21_chef-provisionerless.box"
+	DefaultVagrantBoxSHA1 = "f520b4ca37ce1721fb60ff20636eeaf12bc633ca"
 )
+
+var vagrantFiles = [...]string{
+	"Vagrantfile",
+	"fedora-21-x86_64-disk1.vmdk",
+	"box.ovf",
+	"opscode_fedora-21_chef-provisionerless.box",
+	"metadata.json",
+}
 
 var ErrDeployedEnvironment error = errors.New("environment already deployed.")
 var ErrNonSupportedArchitecture error = errors.New("non supported architecture. must be either i386 or amd64.")
@@ -69,7 +77,7 @@ func (v *Virtualbox) isDeployedEnv() bool {
 }
 
 func (v *Virtualbox) isISOdownloaded() bool {
-	fn := path.Base(VagrantBox)
+	fn := path.Base(v.vagrantBox)
 	if _, err := os.Stat(fn); err == nil {
 		h := sha1.New()
 		r, rerr := os.Open(fn)
@@ -84,7 +92,7 @@ func (v *Virtualbox) isISOdownloaded() bool {
 		}
 
 		isoSHA1 := h.Sum(nil)
-		if fmt.Sprintf("%x", isoSHA1) == VagrantBoxSHA1 {
+		if fmt.Sprintf("%x", isoSHA1) == v.vagrantBoxSHA1 {
 			return true
 		}
 
@@ -98,7 +106,7 @@ func (v *Virtualbox) downloadISO() error {
 		return nil
 	}
 
-	fn := path.Base(VagrantBox)
+	fn := path.Base(v.vagrantBox)
 	output, err := os.Create(fn)
 	if err != nil {
 		return err
@@ -109,7 +117,7 @@ func (v *Virtualbox) downloadISO() error {
 		}
 	}(output)
 
-	response, err := http.Get(VagrantBox)
+	response, err := http.Get(v.vagrantBox)
 	if err != nil {
 		return err
 	}
@@ -127,7 +135,7 @@ func (v *Virtualbox) downloadISO() error {
 }
 
 func (v *Virtualbox) openBoxTarFile() (*tar.Reader, error) {
-	boxFileReader, err := os.Open(path.Base(VagrantBox))
+	boxFileReader, err := os.Open(path.Base(v.vagrantBox))
 	if err != nil {
 		return nil, err
 	}
@@ -220,15 +228,8 @@ func (v *Virtualbox) startVM() error {
 }
 
 func (v *Virtualbox) cleanUp() {
-	files := [...]string{
-		"Vagrantfile",
-		"fedora-21-x86_64-disk1.vmdk",
-		"box.ovf",
-		"opscode_fedora-21_chef-provisionerless.box",
-		"metadata.json",
-	}
 
-	for _, fn := range files {
+	for _, fn := range vagrantFiles {
 		if err := os.Remove(fn); err != nil {
 			log.Println(err)
 		}

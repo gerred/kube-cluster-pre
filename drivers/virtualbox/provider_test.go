@@ -49,3 +49,16 @@ func TestIsMinimumVirtualBoxVersion(t *testing.T) {
 		t.Error("expect %v. got %v", ErrParsingVirtualBoxVersion, err)
 	}
 }
+
+func TestIsISOdownloaded(t *testing.T) {
+	const fn = "foo"
+	v, err := New("testEnv", VagrantBox(fn))
+
+	if err != nil {
+		t.Errorf("unexpected error: %v", err)
+	}
+
+	if v.isISOdownloaded() {
+		t.Error("unexpected file found: %v", fn)
+	}
+}

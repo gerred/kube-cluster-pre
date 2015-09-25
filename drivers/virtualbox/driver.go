@@ -28,9 +28,11 @@ const (
 )
 
 type Virtualbox struct {
-	mgmtbin     string
-	headlessbin string
-	envName     string
+	mgmtbin        string
+	headlessbin    string
+	envName        string
+	vagrantBox     string
+	vagrantBoxSHA1 string
 }
 
 var ErrParsingVirtualBoxVersion error = errors.New("error trying to detect VirtualBox version")
@@ -38,7 +40,7 @@ var ErrMinVirtualBoxVersion error = errors.New("upgrade Virtualbox to at least v
 
 var execCommand = exec.Command
 
-func New(envName string) (*Virtualbox, error) {
+func New(envName string, options ...Option) (*Virtualbox, error) {
 	dotExe := ""
 	if runtime.GOOS == "windows" {
 		dotExe = ".exe"
@@ -56,10 +58,17 @@ func New(envName string) (*Virtualbox, error) {
 		mgmtbin:     mgmtbin,
 		headlessbin: headlessbin,
 		envName:     envName,
+
+		vagrantBox:     DefaultVagrantBox,
+		vagrantBoxSHA1: DefaultVagrantBoxSHA1,
+	}
+
+	for _, opt := range options {
+		opt(v)
 	}
 
 	if err := v.isMinimumVirtualBoxVersion(); err != nil {
-		return nil, err
+		return v, err
 	}
 
 	return v, nil
