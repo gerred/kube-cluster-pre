@@ -17,7 +17,7 @@ package cluster
 import "testing"
 
 func TestGenerateBasicAuth(t *testing.T) {
-	c := New()
+	c := new(Cluster)
 	c.GenerateBasicAuth()
 
 	if c.username == "" || c.password == "" {
@@ -26,7 +26,7 @@ func TestGenerateBasicAuth(t *testing.T) {
 }
 
 func TestGenerateTokens(t *testing.T) {
-	c := New()
+	c := new(Cluster)
 	c.GenerateTokens()
 
 	if c.kubeletToken == "" || c.proxyToken == "" {
