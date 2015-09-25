@@ -32,8 +32,8 @@ import (
 )
 
 const (
-	KubernetesReleaseURL = "https://storage.googleapis.com/kubernetes-release/release/stable.txt"
-	KubernetesURL        = "https://storage.googleapis.com/kubernetes-release/release/%v/kubernetes.tar.gz"
+	DefaultKubernetesReleaseURL = "https://storage.googleapis.com/kubernetes-release/release/stable.txt"
+	DefaultKubernetesURL        = "https://storage.googleapis.com/kubernetes-release/release/%v/kubernetes.tar.gz"
 )
 
 var k8sAssets = map[string]struct{}{
@@ -45,12 +45,18 @@ type Cluster struct {
 	username string
 	password string
 
-	KubeletToken string
-	ProxyToken   string
+	kubeletToken string
+	proxyToken   string
+
+	kubernetesReleaseURL string
+	kubernetesURL        string
 }
 
 func New(options ...Option) *Cluster {
-	c := new(Cluster)
+	c := &Cluster{
+		kubernetesReleaseURL: DefaultKubernetesReleaseURL,
+		kubernetesURL:        DefaultKubernetesURL,
+	}
 
 	for _, opt := range options {
 		opt(c)
@@ -103,8 +109,8 @@ func (c *Cluster) GenerateTokens() error {
 		return err
 	}
 
-	c.KubeletToken = kubeletToken
-	c.ProxyToken = proxyToken
+	c.kubeletToken = kubeletToken
+	c.proxyToken = proxyToken
 
 	return nil
 }
@@ -123,8 +129,8 @@ func (c *Cluster) readRandomToken() (string, error) {
 	return token[0:32], nil
 }
 
-func readProvisionAsset() (*tar.Reader, error) {
-	respRelease, err := http.Get(KubernetesReleaseURL)
+func (c *Cluster) readProvisionAsset() (*tar.Reader, error) {
+	respRelease, err := http.Get(c.kubernetesReleaseURL)
 	if err != nil {
 		return nil, err
 	}
@@ -140,7 +146,7 @@ func readProvisionAsset() (*tar.Reader, error) {
 	}
 	release := strings.TrimSpace(string(b))
 
-	respTarball, err := http.Get(fmt.Sprintf(KubernetesURL, release))
+	respTarball, err := http.Get(fmt.Sprintf(c.kubernetesURL, release))
 	if err != nil {
 		return nil, err
 	}
@@ -154,7 +160,7 @@ func readProvisionAsset() (*tar.Reader, error) {
 	return tarReader, nil
 }
 func (c *Cluster) DownloadProvisionAssets() error {
-	tarReader, err := readProvisionAsset()
+	tarReader, err := c.readProvisionAsset()
 	if err != nil {
 		return err
 	}
