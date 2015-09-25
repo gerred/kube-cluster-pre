@@ -21,6 +21,8 @@ import (
 	"os"
 	"strings"
 	"text/template"
+
+	"github.com/gerred/kube-cluster/Godeps/_workspace/src/github.com/spf13/viper"
 )
 
 const masterSh = `#! /bin/bash
@@ -104,38 +106,49 @@ func (v *Virtualbox) ProvisionMaster() error {
 		ServiceClusterIpRange      string
 		VagrantDefaultProvider     string
 	}{
-		AdmissionControl:           "AdmissionControl",
-		AllMinionContainerNetmasks: "AllMinionContainerNetmasks",
-		AllMinionContainerSubnets:  "AllMinionContainerSubnets",
-		AllMinionIps:               "AllMinionIps",
-		AllMinionNames:             "AllMinionNames",
-		ContainerSubnet:            "ContainerSubnet",
-		DnsDomain:                  "DnsDomain",
-		DnsReplicas:                "DnsReplicas",
-		DnsServerIp:                "DnsServerIp",
-		EnableClusterDns:           "EnableClusterDns",
-		EnableClusterMonitoring:    "EnableClusterMonitoring",
-		EnableClusterUI:            "EnableClusterUI",
-		EnableCpuCfsQuota:          "EnableCpuCfsQuota",
-		EnableNodeLogging:          "EnableNodeLogging",
-		ExtraDockerOpts:            "ExtraDockerOpts",
-		InstancePrefix:             "InstancePrefix",
-		KubeletToken:               "KubeletToken",
-		KubePassword:               "KubePassword",
-		KubeProxyToken:             "KubeProxyToken",
-		KubeUser:                   "KubeUser",
-		LoggingDestination:         "LoggingDestination",
-		MasterContainerAddr:        "MasterContainerAddr",
-		MasterContainerNetmask:     "MasterContainerNetmask",
-		MasterContainerSubnet:      "MasterContainerSubnet",
-		MasterExtraSans:            "MasterExtraSans",
-		MasterIp:                   "MasterIp",
-		MasterPasswd:               "MasterPasswd",
-		MasterUser:                 "MasterUser",
-		RuntimeConfig:              "RuntimeConfig",
-		ServiceClusterIpRange:      "ServiceClusterIpRange",
-		VagrantDefaultProvider:     "VagrantDefaultProvider",
+		AdmissionControl:           viper.GetString("ADMISSION_CONTROL"),
+		AllMinionContainerNetmasks: viper.GetString("CONTAINER_SUBNET"),
+		AllMinionContainerSubnets:  viper.GetString("DNS_DOMAIN"),
+		AllMinionIps:               viper.GetString("DNS_REPLICAS"),
+		AllMinionNames:             viper.GetString("DNS_SERVER_IP"),
+		ContainerSubnet:            viper.GetString("ENABLE_CLUSTER_DNS"),
+		DnsDomain:                  viper.GetString("ENABLE_CLUSTER_MONITORING"),
+		DnsReplicas:                viper.GetString("ENABLE_CLUSTER_UI"),
+		DnsServerIp:                viper.GetString("ENABLE_CPU_CFS_QUOTA"),
+		EnableClusterDns:           viper.GetString("ENABLE_NODE_LOGGING"),
+		EnableClusterMonitoring:    viper.GetString("EXTRA_DOCKER_OPTS"),
+		EnableClusterUI:            viper.GetString("INSTANCE_PREFIX"),
+		EnableCpuCfsQuota:          viper.GetString("KUBE_PASSWORD"),
+		EnableNodeLogging:          viper.GetString("KUBE_PROXY_TOKEN"),
+		ExtraDockerOpts:            viper.GetString("KUBE_USER"),
+		InstancePrefix:             viper.GetString("KUBELET_TOKEN"),
+		KubeletToken:               viper.GetString("LOGGING_DESTINATION"),
+		KubePassword:               viper.GetString("MASTER_CONTAINER_ADDR"),
+		KubeProxyToken:             viper.GetString("MASTER_CONTAINER_NETMASK"),
+		KubeUser:                   viper.GetString("MASTER_CONTAINER_SUBNET"),
+		LoggingDestination:         viper.GetString("MASTER_EXTRA_SANS"),
+		MasterContainerAddr:        viper.GetString("MASTER_IP"),
+		MasterContainerNetmask:     viper.GetString("MASTER_PASSWD"),
+		MasterContainerSubnet:      viper.GetString("MASTER_USER"),
+		MasterExtraSans:            viper.GetString("MINION_CONTAINER_NETMASKS"),
+		MasterIp:                   viper.GetString("MINION_CONTAINER_SUBNETS"),
+		MasterPasswd:               viper.GetString("MINION_IPS"),
+		MasterUser:                 viper.GetString("MINION_NAMES"),
+		RuntimeConfig:              viper.GetString("RUNTIME_CONFIG"),
+		ServiceClusterIpRange:      viper.GetString("SERVICE_CLUSTER_IP_RANGE"),
+		VagrantDefaultProvider:     viper.GetString("VAGRANT_DEFAULT_PROVIDER"),
 	}
+
+	if values.EnableNodeLogging == "" {
+		values.EnableNodeLogging = "false"
+	}
+	if values.EnableClusterDns == "" {
+		values.EnableClusterDns = "false"
+	}
+
+	// TODO(carlos): implode (or count) for MINION_NAMES, MINION_IPS,
+	// MINION_CONTAINER_NETMASKS, MINION_CONTAINER_SUBNETS
+
 	err = tmpl.Execute(masterShFile, values)
 	if err != nil {
 		log.Panic(err)
