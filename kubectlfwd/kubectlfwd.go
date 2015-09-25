@@ -22,7 +22,7 @@
 package kubectlfwd
 
 import (
-	"os"
+	"io"
 	"os/exec"
 	"strings"
 )
@@ -46,14 +46,14 @@ type Fwd struct {
 	kubectlBinary string   // kubectlBinary is the full path of the detected kubectl
 
 	// stdio for kubectl execution
-	stdin  *os.File
-	stdout *os.File
-	stderr *os.File
+	stdin  io.Reader
+	stdout io.Writer
+	stderr io.Writer
 }
 
-// New instantiates a call forwarder (*Fwd). Feed it os.Args, and os.Stdout and
-// os.Stderr.
-func New(args []string, kubectl string, stdin, stdout, stderr *os.File) *Fwd {
+// New instantiates a call forwarder (*Fwd). Feed it with os.Args, and os.Stdin,
+// os.Stdout and os.Stderr.
+func New(args []string, kubectl string, stdin io.Reader, stdout, stderr io.Writer) *Fwd {
 	return &Fwd{
 		args:          args,
 		kubectlBinary: kubectl,
