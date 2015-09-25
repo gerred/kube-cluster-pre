@@ -14,4 +14,23 @@
 
 package cli
 
+import "github.com/gerred/kube-cluster/Godeps/_workspace/src/github.com/spf13/cobra"
+
 var KubeRoot = ""
+
+// KubeClusterCmd is the root command. Attach all other commands to this.
+var KubeClusterCmd = &cobra.Command{
+	Use:   "kube-cluster",
+	Short: "kube-cluster provisions, scales, and manages kubernetes environments",
+	Long:  "kube-cluster provisions, scales, and manages kubernetes environments",
+	Run: func(cmd *cobra.Command, args []string) {
+	},
+}
+
+var providerName string
+
+var createEnvCmd = &cobra.Command{
+	Use:   "create-env [name]",
+	Short: "Create a Kubernetes cluster with the given name and provider options",
+	Run:   CreateCluster,
+}

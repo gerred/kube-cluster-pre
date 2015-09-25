@@ -24,14 +24,6 @@ import (
 	"github.com/gerred/kube-cluster/drivers"
 )
 
-var providerName string
-
-var createEnvCmd = &cobra.Command{
-	Use:   "create-env [name]",
-	Short: "Create a Kubernetes cluster with the given name and provider options",
-	Run:   CreateCluster,
-}
-
 func init() {
 	createEnvCmd.Flags().StringVarP(&providerName, "provider", "p", "virtualbox", "specify which provider to use")
 	cluster.GetOptions(createEnvCmd)
@@ -70,7 +62,11 @@ func kubeUp(provider drivers.Driver) (*cluster.Cluster, error) {
 		options = append(options, f.Action(v))
 	}
 
-	c := cluster.New(options...)
+	c := cluster.New(
+		provider,
+		KubeRoot,
+		options...,
+	)
 
 	fmt.Println("kube up - start")
 	defer fmt.Println("kube up - done")
@@ -89,8 +85,9 @@ func kubeUp(provider drivers.Driver) (*cluster.Cluster, error) {
 	}
 	defer c.CleanUpProvisionAssets()
 
-	// c.Master := provider.ProvisionMaster()
-	provider.ProvisionMaster()
+	if err := c.ProvisionMaster(); err != nil {
+		return nil, err
+	}
 	// c.Nodes := provider.ProvisionNode()
 	provider.ProvisionNode()
 

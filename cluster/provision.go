@@ -12,14 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package cli
+package cluster
 
-// Execute adds all child commands to the root command KubeClusterCmd and sets all flags appropriately.
-func Execute() {
-	addCommands()
-	KubeClusterCmd.Execute()
-}
-
-func addCommands() {
-	KubeClusterCmd.AddCommand(createEnvCmd)
+func (c *Cluster) ProvisionMaster() error {
+	return c.provider.ProvisionMaster()
 }

@@ -29,6 +29,8 @@ import (
 	"path"
 	"strings"
 	"time"
+
+	"github.com/gerred/kube-cluster/drivers"
 )
 
 const (
@@ -42,6 +44,9 @@ var k8sAssets = map[string]struct{}{
 }
 
 type Cluster struct {
+	provider drivers.Driver
+	kubeRoot string
+
 	username string
 	password string
 
@@ -52,8 +57,10 @@ type Cluster struct {
 	kubernetesURL        string
 }
 
-func New(options ...Option) *Cluster {
+func New(provider drivers.Driver, kubeRoot string, options ...Option) *Cluster {
 	c := &Cluster{
+		provider:             provider,
+		kubeRoot:             kubeRoot,
 		kubernetesReleaseURL: DefaultKubernetesReleaseURL,
 		kubernetesURL:        DefaultKubernetesURL,
 	}
