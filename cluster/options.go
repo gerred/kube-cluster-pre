@@ -48,15 +48,3 @@ func Password(p string) Option {
 		c.password = p
 	}
 }
-
-func KubernetesReleaseURL(u string) Option {
-	return func(c *Cluster) {
-		c.kubernetesReleaseURL = u
-	}
-}
-
-func KubernetesURL(u string) Option {
-	return func(c *Cluster) {
-		c.kubernetesURL = u
-	}
-}

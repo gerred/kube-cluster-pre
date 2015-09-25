@@ -80,11 +80,6 @@ func kubeUp(provider drivers.Driver) (*cluster.Cluster, error) {
 		return nil, err
 	}
 
-	if err := c.DownloadProvisionAssets(); err != nil {
-		return nil, err
-	}
-	defer c.CleanUpProvisionAssets()
-
 	if err := c.ProvisionMaster(); err != nil {
 		return nil, err
 	}

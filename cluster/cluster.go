@@ -15,27 +15,14 @@
 package cluster
 
 import (
-	"archive/tar"
-	"compress/gzip"
 	cryptoRand "crypto/rand"
 	"encoding/base64"
 	"fmt"
-	"io"
-	"io/ioutil"
-	"log"
 	"math/rand"
-	"net/http"
-	"os"
-	"path"
 	"strings"
 	"time"
 
 	"github.com/gerred/kube-cluster/drivers"
-)
-
-const (
-	DefaultKubernetesReleaseURL = "https://storage.googleapis.com/kubernetes-release/release/stable.txt"
-	DefaultKubernetesURL        = "https://storage.googleapis.com/kubernetes-release/release/%v/kubernetes.tar.gz"
 )
 
 var k8sAssets = map[string]struct{}{
@@ -52,17 +39,12 @@ type Cluster struct {
 
 	kubeletToken string
 	proxyToken   string
-
-	kubernetesReleaseURL string
-	kubernetesURL        string
 }
 
 func New(provider drivers.Driver, kubeRoot string, options ...Option) *Cluster {
 	c := &Cluster{
-		provider:             provider,
-		kubeRoot:             kubeRoot,
-		kubernetesReleaseURL: DefaultKubernetesReleaseURL,
-		kubernetesURL:        DefaultKubernetesURL,
+		provider: provider,
+		kubeRoot: kubeRoot,
 	}
 
 	for _, opt := range options {
@@ -134,82 +116,6 @@ func (c *Cluster) readRandomToken() (string, error) {
 		token = strings.Replace(token, fchr, "", -1)
 	}
 	return token[0:32], nil
-}
-
-func (c *Cluster) readProvisionAsset() (*tar.Reader, error) {
-	respRelease, err := http.Get(c.kubernetesReleaseURL)
-	if err != nil {
-		return nil, err
-	}
-	defer func(c io.Closer) {
-		if err := c.Close(); err != nil {
-			log.Panic(err)
-		}
-	}(respRelease.Body)
-
-	b, err := ioutil.ReadAll(respRelease.Body)
-	if err != nil {
-		return nil, err
-	}
-	release := strings.TrimSpace(string(b))
-
-	respTarball, err := http.Get(fmt.Sprintf(c.kubernetesURL, release))
-	if err != nil {
-		return nil, err
-	}
-
-	gzReader, err := gzip.NewReader(respTarball.Body)
-	if err != nil {
-		return nil, err
-	}
-
-	tarReader := tar.NewReader(gzReader)
-	return tarReader, nil
-}
-func (c *Cluster) DownloadProvisionAssets() error {
-	tarReader, err := c.readProvisionAsset()
-	if err != nil {
-		return err
-	}
-	for {
-		hdr, err := tarReader.Next()
-		if err == io.EOF {
-			break
-		} else if err != nil {
-			return err
-		}
-
-		baseFn := path.Base(hdr.Name)
-		if _, ok := k8sAssets[baseFn]; !ok {
-			continue
-		}
-
-		writer, err := os.Create(baseFn)
-		if err != nil {
-			return err
-		}
-		if _, err := io.Copy(writer, tarReader); err != nil {
-			return err
-		}
-		if err := writer.Close(); err != nil {
-			return err
-		}
-
-		if err := os.Chmod(baseFn, os.FileMode(hdr.Mode)); err != nil {
-			return err
-		}
-
-	}
-
-	return nil
-}
-
-func (c *Cluster) CleanUpProvisionAssets() {
-	for fn, _ := range k8sAssets {
-		if err := os.Remove(fn); err != nil {
-			log.Println(err)
-		}
-	}
 }
 
 func (c *Cluster) IsValid() bool {
