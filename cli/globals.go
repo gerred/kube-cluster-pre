@@ -12,39 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+package cli
 
-import (
-	"fmt"
-	"log"
-	"os"
-	"os/exec"
-	"path"
-
-	"github.com/gerred/kube-cluster/cli"
-	"github.com/gerred/kube-cluster/kubectlfwd"
-)
-
-const kubectlBinaryName = "kubectl"
-
-func main() {
-	kubectl, err := exec.LookPath(kubectlBinaryName)
-	if err != nil {
-		log.Fatal(err)
-	}
-	cli.KubeRoot = path.Dir(path.Dir(path.Clean(kubectl)))
-
-	forwarder := kubectlfwd.New(
-		os.Args,
-		kubectl,
-		os.Stdin,
-		os.Stdout,
-		os.Stderr,
-	)
-	if fwd, err := forwarder.Hijack(); !fwd {
-		cli.Execute()
-	} else if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
-	}
-}
+var KubeRoot = ""
