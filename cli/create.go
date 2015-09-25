@@ -44,7 +44,7 @@ func CreateCluster(cmd *cobra.Command, args []string) {
 		log.Fatal("name needs to be provided")
 	}
 
-	provider, err := drivers.Factory(providerName, args[0])
+	provider, err := drivers.Factory(providerName, args[0], KubeRoot)
 	if err != nil {
 		log.Panicf("error loading driver %s. %v", providerName, err)
 	}

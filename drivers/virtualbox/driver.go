@@ -28,9 +28,12 @@ const (
 )
 
 type Virtualbox struct {
-	mgmtbin        string
-	headlessbin    string
-	envName        string
+	envName  string
+	kubeRoot string
+
+	mgmtbin     string
+	headlessbin string
+
 	vagrantBox     string
 	vagrantBoxSHA1 string
 }
@@ -40,7 +43,7 @@ var ErrMinVirtualBoxVersion error = errors.New("upgrade Virtualbox to at least v
 
 var execCommand = exec.Command
 
-func New(envName string, options ...Option) (*Virtualbox, error) {
+func New(envName, kubeRoot string, options ...Option) (*Virtualbox, error) {
 	dotExe := ""
 	if runtime.GOOS == "windows" {
 		dotExe = ".exe"
@@ -55,9 +58,11 @@ func New(envName string, options ...Option) (*Virtualbox, error) {
 	}
 
 	v := &Virtualbox{
+		envName:  envName,
+		kubeRoot: kubeRoot,
+
 		mgmtbin:     mgmtbin,
 		headlessbin: headlessbin,
-		envName:     envName,
 
 		vagrantBox:     DefaultVagrantBox,
 		vagrantBoxSHA1: DefaultVagrantBoxSHA1,
@@ -94,9 +99,6 @@ func (v *Virtualbox) GenerateCerts() {
 }
 
 func (v *Virtualbox) GetTokens() {
-}
-
-func (v *Virtualbox) ProvisionMaster() {
 }
 
 func (v *Virtualbox) ConfigureMaster() {

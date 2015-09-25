@@ -29,7 +29,7 @@ type Driver interface {
 
 	GenerateCerts()
 	GetTokens()
-	ProvisionMaster()
+	ProvisionMaster() error
 	ConfigureMaster()
 	ProvisionNode()
 	ConfigureNode()
@@ -40,10 +40,10 @@ const (
 	AmazonEC2  = "amazonec2"
 )
 
-func Factory(provider, envName string) (Driver, error) {
+func Factory(provider, envName, kubeRoot string) (Driver, error) {
 	switch provider {
 	case Virtualbox:
-		return virtualbox.New(envName)
+		return virtualbox.New(envName, kubeRoot)
 	case AmazonEC2:
 		log.Panic("not implemented")
 	default:
