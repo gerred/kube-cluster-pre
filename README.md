@@ -1,7 +1,6 @@
 # kube-cluster
 
-`kube-cluster` is a wrapper for `kubectl` that provides environment
-configuration switch.
+`kube-cluster` tool for launching and managing Kubernetes environments.
 
 ## Usage
 ```ShellSession
@@ -73,9 +72,6 @@ $ echo export KUBE_CLUSTER_ENVIRONMENT="environment-name" >> ~/.bash_profile
 ```
 
 ## Dependencies
-
- * Kubernetes locally installed (for `kubectl` and related tools).
- * GoDeps (if you plan to contribute).
 
 ## Contributing
 
