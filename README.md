@@ -1,3 +1,7 @@
+# Deprecation Notice
+
+This has been moved to pre-planning at https://github.com/gerred/kube-cluster. It's being refactored for simplicity, and will have a much more `docker-machine` like focus.
+
 # kube-cluster
 
 `kube-cluster` tool for launching and managing Kubernetes environments.
