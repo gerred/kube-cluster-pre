@@ -1,0 +1,91 @@
+// Copyright 2015 The kube-cluster Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// 		http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package cli
+
+import (
+	"fmt"
+	"log"
+
+	"github.com/gerred/kube-cluster/Godeps/_workspace/src/github.com/spf13/cobra"
+	"github.com/gerred/kube-cluster/Godeps/_workspace/src/github.com/spf13/viper"
+	"github.com/gerred/kube-cluster/cluster"
+	"github.com/gerred/kube-cluster/drivers"
+)
+
+// CreateCluster creates a new Kubernetes cluster with a provider name and options.
+func CreateCluster(cmd *cobra.Command, args []string) {
+	if len(args) < 1 {
+		cmd.Usage()
+		log.Fatal("name needs to be provided")
+	}
+
+	provider, err := drivers.Factory(providerName, args[0], KubeRoot)
+	if err != nil {
+		log.Panicf("error loading driver %s. %v", providerName, err)
+	}
+	fmt.Println("Using", providerName)
+
+	cluster, err := kubeUp(provider)
+	if err != nil {
+		log.Fatalf("could not install kubernetes in %v. %v", providerName, err)
+	}
+
+	if !cluster.IsValid() {
+		log.Fatalf("could not install kubernetes in %v. invalid cluster outcome.", providerName)
+	}
+
+	fmt.Println("cluster info")
+	fmt.Println("\t", cluster.Info())
+}
+
+func kubeUp(provider drivers.Driver) (*cluster.Cluster, error) {
+	var options []cluster.Option
+	for _, f := range cluster.Flags {
+		v := viper.GetString(f.Name)
+		options = append(options, f.Action(v))
+	}
+
+	c := cluster.New(
+		provider,
+		KubeRoot,
+		options...,
+	)
+
+	fmt.Println("kube up - start")
+	defer fmt.Println("kube up - done")
+
+	if err := provider.Setup(); err != nil {
+		return nil, err
+	}
+
+	c.GenerateBasicAuth()
+	if err := c.GenerateTokens(); err != nil {
+		return nil, err
+	}
+
+	if err := c.ProvisionMaster(); err != nil {
+		return nil, err
+	}
+	// c.Nodes := provider.ProvisionNode()
+	provider.ProvisionNode()
+
+	fmt.Println("\tscp kubernetes")
+	fmt.Println("\tscp certificates")
+	fmt.Println("\tcreate kubeconfig")
+
+	fmt.Println("\tverify cluster")
+
+	return c, nil
+}

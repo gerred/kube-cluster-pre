@@ -1,1 +1,3 @@
 kube-cluster
+*.iso
+*.box

@@ -22,7 +22,7 @@
 package kubectlfwd
 
 import (
-	"os"
+	"io"
 	"os/exec"
 	"strings"
 )
@@ -33,7 +33,7 @@ var acceptableClusterCalls = [...]struct {
 	cmd string
 	obj string
 }{
-	{"create", clusterObjectName},
+	{"create-env", ""},
 	{"describe", clusterObjectName},
 	{"env", clusterObjectName},
 	{"get", clusterObjectName},
@@ -46,14 +46,14 @@ type Fwd struct {
 	kubectlBinary string   // kubectlBinary is the full path of the detected kubectl
 
 	// stdio for kubectl execution
-	stdin  *os.File
-	stdout *os.File
-	stderr *os.File
+	stdin  io.Reader
+	stdout io.Writer
+	stderr io.Writer
 }
 
-// New instantiates a call forwarder (*Fwd). Feed it os.Args, and os.Stdout and
-// os.Stderr.
-func New(args []string, kubectl string, stdin, stdout, stderr *os.File) *Fwd {
+// New instantiates a call forwarder (*Fwd). Feed it with os.Args, and os.Stdin,
+// os.Stdout and os.Stderr.
+func New(args []string, kubectl string, stdin io.Reader, stdout, stderr io.Writer) *Fwd {
 	return &Fwd{
 		args:          args,
 		kubectlBinary: kubectl,
@@ -90,30 +90,20 @@ func (f *Fwd) Hijack() (bool, error) {
 // isClusterCall iterates through command and object pairs looking for
 // non-hijackable calls.
 func (f *Fwd) isClusterCall() bool {
-	args := f.noFlagsArgs()
-
-	if len(args) < 3 {
+	if len(f.args) == 1 || len(f.args) == 2 && '-' == f.args[1][0] {
+		return true
+	}
+	if len(f.args) < 3 {
 		return false
 	}
 
-	cmd := strings.ToLower(args[1])
-	obj := strings.ToLower(args[2])
+	cmd := strings.ToLower(f.args[1])
+	obj := strings.ToLower(f.args[2])
 	for _, call := range acceptableClusterCalls {
-		if cmd == call.cmd && obj == call.obj {
+		if cmd == call.cmd && (obj == call.obj || "" == call.obj) {
 			return true
 		}
 	}
 
 	return false
-}
-
-func (f *Fwd) noFlagsArgs() []string {
-	var args []string
-	for _, v := range f.args {
-		if "-f" != v && '-' == v[0] {
-			continue
-		}
-		args = append(args, v)
-	}
-	return args
 }

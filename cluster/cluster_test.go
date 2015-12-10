@@ -12,39 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+package cluster
 
-import (
-	"fmt"
-	"log"
-	"os"
-	"os/exec"
-	"path"
+import "testing"
 
-	"github.com/gerred/kube-cluster/cli"
-	"github.com/gerred/kube-cluster/kubectlfwd"
-)
+func TestGenerateBasicAuth(t *testing.T) {
+	c := new(Cluster)
+	c.GenerateBasicAuth()
 
-const kubectlBinaryName = "kubectl"
-
-func main() {
-	kubectl, err := exec.LookPath(kubectlBinaryName)
-	if err != nil {
-		log.Fatal(err)
+	if c.username == "" || c.password == "" {
+		t.Error("expected some username and password")
 	}
-	cli.KubeRoot = path.Dir(path.Dir(path.Clean(kubectl)))
+}
 
-	forwarder := kubectlfwd.New(
-		os.Args,
-		kubectl,
-		os.Stdin,
-		os.Stdout,
-		os.Stderr,
-	)
-	if fwd, err := forwarder.Hijack(); !fwd {
-		cli.Execute()
-	} else if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
+func TestGenerateTokens(t *testing.T) {
+	c := new(Cluster)
+	c.GenerateTokens()
+
+	if c.kubeletToken == "" || c.proxyToken == "" {
+		t.Error("expected kubete and proxy tokens to not be empty")
 	}
 }
