@@ -33,7 +33,7 @@ var acceptableClusterCalls = [...]struct {
 	cmd string
 	obj string
 }{
-	{"create", clusterObjectName},
+	{"create-env", ""},
 	{"describe", clusterObjectName},
 	{"env", clusterObjectName},
 	{"get", clusterObjectName},
@@ -90,30 +90,17 @@ func (f *Fwd) Hijack() (bool, error) {
 // isClusterCall iterates through command and object pairs looking for
 // non-hijackable calls.
 func (f *Fwd) isClusterCall() bool {
-	args := f.noFlagsArgs()
-
-	if len(args) < 3 {
+	if len(f.args) < 3 {
 		return false
 	}
 
-	cmd := strings.ToLower(args[1])
-	obj := strings.ToLower(args[2])
+	cmd := strings.ToLower(f.args[1])
+	obj := strings.ToLower(f.args[2])
 	for _, call := range acceptableClusterCalls {
-		if cmd == call.cmd && obj == call.obj {
+		if cmd == call.cmd && (obj == call.obj || "" == call.obj) {
 			return true
 		}
 	}
 
 	return false
-}
-
-func (f *Fwd) noFlagsArgs() []string {
-	var args []string
-	for _, v := range f.args {
-		if "-f" != v && '-' == v[0] {
-			continue
-		}
-		args = append(args, v)
-	}
-	return args
 }

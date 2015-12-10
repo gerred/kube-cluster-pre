@@ -8,12 +8,12 @@ This has been moved to pre-planning at https://github.com/gerred/kube-cluster. I
 
 ## Usage
 ```ShellSession
-$ kube-cluster create env dev --driver=vbox
+$ kube-cluster create-env dev --driver=vbox
 Creating environment "dev".
 Running magic... Let there be more light.
 Done.
 
-$ kube-cluster create env stage1 --driver=aws --interactive
+$ kube-cluster create-env stage1 --driver=aws --interactive
 Creating environment "stage1".
 Give AWS Credential ID: some-aws-id
 Give AWS Credential KEY: some-aws-key
@@ -47,7 +47,7 @@ $ kube-cluster get rc,svc,po,no
 
 ## Options
 
- * *create env*: creates a local environment configuration to communicate with a
+ * *create-env*: creates a local environment configuration to communicate with a
  kubernetes deployment.
 
  * *env [name]*: changes to given environment. It reconfigures the tool so all

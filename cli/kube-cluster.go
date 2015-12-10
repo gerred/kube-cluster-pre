@@ -27,9 +27,10 @@ var KubeClusterCmd = &cobra.Command{
 
 // Execute adds all child commands to the root command KubeClusterCmd and sets all flags appropriately.
 func Execute() {
+	addCommands()
 	KubeClusterCmd.Execute()
 }
 
 func addCommands() {
-
+	KubeClusterCmd.AddCommand(createEnvCmd)
 }
